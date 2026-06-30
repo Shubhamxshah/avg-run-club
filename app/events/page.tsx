@@ -1,54 +1,88 @@
-import EventPhotosCarousel from "../components/event-photos-carousel";
-import Image from "next/image";
-import Link from "next/link";
-
-const RUN_RAVE_COFFEE = {
-  title: "Run Rave & Coffee",
-  date: "28 June 2026",
-  time: "5:45 AM",
-  distance: "3K",
-  location: "Dinkyard, Bholav Road",
-  images: [
-    {
-      src: "/SaveClip.App_729654037_18087814901631083_340476392083462954_n.jpg",
-      alt: "Run Rave & Coffee event poster",
-    },
-    {
-      src: "/SaveClip.App_722215597_18087814910631083_5792295694583167699_n.jpg",
-      alt: "Run Rave & Coffee partners and artists",
-    },
-    {
-      src: "/SaveClip.App_726868023_18087814919631083_4289751263115446295_n.jpg",
-      alt: "Run Rave & Coffee event schedule",
-    },
-  ],
-} as const;
+import EventCard from "../components/event-card";
+import PendingRegistration from "../components/pending-registration";
+import SiteHeader from "../components/site-header";
+import { auth } from "@/lib/auth";
+import { getPastEvents, getUpcomingEvents } from "@/lib/events";
+import {
+  PAST_RUN_RAVE,
+  UPCOMING_RUN_RAVE,
+  parseEventImages,
+} from "@/lib/run-rave-images";
+import { headers } from "next/headers";
+import { Suspense } from "react";
 
 export const metadata = {
   title: "Events | AVG Run Club",
   description: "Upcoming and past AVG Run Club events.",
 };
 
-export default function EventsPage() {
+type EventRecord = {
+  id: string;
+  title: string;
+  date: Date;
+  time: string;
+  distance: string | null;
+  location: string;
+  images: unknown;
+};
+
+const STATIC_UPCOMING: EventRecord = {
+  id: UPCOMING_RUN_RAVE.id,
+  title: UPCOMING_RUN_RAVE.title,
+  date: UPCOMING_RUN_RAVE.date,
+  time: UPCOMING_RUN_RAVE.time,
+  distance: UPCOMING_RUN_RAVE.distance,
+  location: UPCOMING_RUN_RAVE.location,
+  images: UPCOMING_RUN_RAVE.images,
+};
+
+const STATIC_PAST: EventRecord = {
+  id: PAST_RUN_RAVE.id,
+  title: PAST_RUN_RAVE.title,
+  date: PAST_RUN_RAVE.date,
+  time: PAST_RUN_RAVE.time,
+  distance: PAST_RUN_RAVE.distance,
+  location: PAST_RUN_RAVE.location,
+  images: PAST_RUN_RAVE.images,
+};
+
+async function loadEvents() {
+  try {
+    const [upcoming, past] = await Promise.all([
+      getUpcomingEvents(),
+      getPastEvents(),
+    ]);
+
+    return {
+      upcoming: upcoming.length > 0 ? upcoming : [STATIC_UPCOMING],
+      past: past.length > 0 ? past : [STATIC_PAST],
+    };
+  } catch {
+    return {
+      upcoming: [STATIC_UPCOMING],
+      past: [STATIC_PAST],
+    };
+  }
+}
+
+export default async function EventsPage() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  const userEventId =
+    (session?.user as { eventId?: string | null } | undefined)?.eventId ??
+    null;
+
+  const { upcoming, past } = await loadEvents();
+
   return (
     <div className="min-h-screen bg-black text-white">
-      <header className="border-b border-white/10 px-6 py-6">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <Link
-            href="/"
-            className="text-sm font-semibold uppercase tracking-wider text-white/70 transition hover:text-white"
-          >
-            ← Home
-          </Link>
-          <Image
-            src="/avg_logo.jpg"
-            alt="AVG Run Club"
-            width={40}
-            height={40}
-            className="size-10 rounded-full object-cover"
-          />
-        </div>
-      </header>
+      <Suspense fallback={null}>
+        <PendingRegistration />
+      </Suspense>
+
+      <SiteHeader />
 
       <main className="mx-auto max-w-5xl px-6 py-12 md:py-16">
         <div className="mb-12 text-center md:mb-16">
@@ -67,15 +101,35 @@ export default function EventsPage() {
           >
             Upcoming Events
           </h2>
-          <div className="rounded-2xl border border-dashed border-white/15 bg-white/3 px-8 py-14 text-center">
-            <p className="font-display text-2xl font-black tracking-wide text-white/90 sm:text-3xl">
-              Coming Soon
-            </p>
-            <p className="mx-auto mt-3 max-w-sm text-sm text-white/50">
-              The next run is being planned. Check back here or follow us for
-              updates.
-            </p>
-          </div>
+
+          {upcoming.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/15 bg-white/3 px-8 py-14 text-center">
+              <p className="font-display text-2xl font-black tracking-wide text-white/90 sm:text-3xl">
+                Coming Soon
+              </p>
+              <p className="mx-auto mt-3 max-w-sm text-sm text-white/50">
+                The next run is being planned. Check back here or follow us for
+                updates.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {upcoming.map((event) => (
+                <EventCard
+                  key={event.id}
+                  id={event.id}
+                  title={event.title}
+                  date={event.date}
+                  time={event.time}
+                  distance={event.distance}
+                  location={event.location}
+                  images={parseEventImages(event.images)}
+                  showRegister
+                  userEventId={userEventId}
+                />
+              ))}
+            </div>
+          )}
         </section>
 
         <section aria-labelledby="past-heading">
@@ -86,38 +140,24 @@ export default function EventsPage() {
             Past Events
           </h2>
 
-          <article className="overflow-hidden rounded-2xl border border-white/10 bg-white/3">
-            <div className="border-b border-white/10 px-6 py-5 sm:px-8">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <time
-                    dateTime="2026-06-28"
-                    className="text-sm font-medium uppercase tracking-wider text-[#e8192c]"
-                  >
-                    28 June 2026
-                  </time>
-                  <h3 className="mt-1 font-display text-2xl font-black tracking-tight text-white sm:text-3xl">
-                    {RUN_RAVE_COFFEE.title}
-                  </h3>
-                </div>
-                <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-wider">
-                  <span className="rounded-full border border-white/20 px-3 py-1 text-white/80">
-                    {RUN_RAVE_COFFEE.time}
-                  </span>
-                  <span className="rounded-full border border-white/20 px-3 py-1 text-white/80">
-                    {RUN_RAVE_COFFEE.distance}
-                  </span>
-                </div>
-              </div>
-              <p className="mt-3 text-sm text-white/50">
-                {RUN_RAVE_COFFEE.location}
-              </p>
+          {past.length === 0 ? (
+            <p className="text-sm text-white/50">No past events yet.</p>
+          ) : (
+            <div className="space-y-8">
+              {past.map((event) => (
+                <EventCard
+                  key={event.id}
+                  id={event.id}
+                  title={event.title}
+                  date={event.date}
+                  time={event.time}
+                  distance={event.distance}
+                  location={event.location}
+                  images={parseEventImages(event.images)}
+                />
+              ))}
             </div>
-
-            <div className="py-4 sm:py-6">
-              <EventPhotosCarousel slides={RUN_RAVE_COFFEE.images} />
-            </div>
-          </article>
+          )}
         </section>
       </main>
     </div>

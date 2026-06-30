@@ -1,9 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import ProfileMenu from "./profile-menu";
+
 export default function Hero() {
   return (
     <section className="relative min-h-screen w-full overflow-hidden">
+      <div className="absolute right-6 top-6 z-20 sm:right-8 sm:top-8">
+        <ProfileMenu />
+      </div>
       <Image
         src="/01.jpg"
         alt="AVG Run Club community group photo"
@@ -42,17 +47,17 @@ export default function Hero() {
         </div>
 
         <div className="mt-10 flex w-full animate-[fade-up_0.8s_ease-out_0.15s_both] flex-row items-center justify-center gap-3 sm:gap-4">
-          <Link
+          {/* <Link
             href="/events"
             className="inline-flex h-12 items-center justify-center rounded-full border-2 border-white/80 bg-white/5 px-8 text-sm font-semibold uppercase tracking-wider text-white backdrop-blur-sm transition hover:border-white hover:bg-white/15"
           >
             Past events
-          </Link>
+          </Link> */}
           <Link
-            href="/register"
+            href="/events"
             className="inline-flex h-12 items-center justify-center rounded-full bg-[#e8192c] px-8 text-sm font-semibold uppercase tracking-wider text-white shadow-[0_8px_32px_rgba(232,25,44,0.45)] transition hover:bg-[#c91526] hover:shadow-[0_12px_40px_rgba(232,25,44,0.55)]"
           >
-            Register
+            Register for next run!
           </Link>
         </div>
 
