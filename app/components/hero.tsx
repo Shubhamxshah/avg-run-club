@@ -41,12 +41,12 @@ export default function Hero() {
           </p>
         </div>
 
-        <div className="mt-10 flex w-full max-w-sm animate-[fade-up_0.8s_ease-out_0.15s_both] flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center sm:gap-4">
+        <div className="mt-10 flex w-full animate-[fade-up_0.8s_ease-out_0.15s_both] flex-row items-center justify-center gap-3 sm:gap-4">
           <Link
             href="/events"
             className="inline-flex h-12 items-center justify-center rounded-full border-2 border-white/80 bg-white/5 px-8 text-sm font-semibold uppercase tracking-wider text-white backdrop-blur-sm transition hover:border-white hover:bg-white/15"
           >
-            View Past Events
+            Past events
           </Link>
           <Link
             href="/register"
